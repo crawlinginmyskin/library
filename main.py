@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox
 import sqlite3
 from login import loggingUser
+from datetime import datetime
 
 
 class Ui_MainWindow(QWidget):
@@ -17,11 +18,12 @@ class Ui_MainWindow(QWidget):
         query = "SELECT ID,AUTHOR,TITLE,PUBLISHER,YEAR_PUBLISHED FROM books WHERE LENT_TO is 'nobody'"
         result = c.execute(query)
         self.tableWidget.setRowCount(0)
-        self.tableWidget.setColumnCount(5)
         for row_number, row_data in enumerate(result):
             self.tableWidget.insertRow(row_number)
             for column_number, data in enumerate(row_data):
                 self.tableWidget.setItem(row_number, column_number, QtWidgets.QTableWidgetItem(str(data)))
+        self.tableWidget.setColumnCount(5)
+        self.tableWidget.setHorizontalHeaderLabels(['ID', 'Author', 'Title', 'Publisher', 'Year Published'])
         c.close()
 
     def setupUi(self, MainWindow):
@@ -60,9 +62,7 @@ class Ui_MainWindow(QWidget):
         self.tableWidget.setColumnCount(5)
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setRowCount(0)
-        self.tableWidget.horizontalHeader().setVisible(False)
         self.tableWidget.verticalHeader().setVisible(False)
-
         self.shRBtn = QtWidgets.QPushButton(self.centralwidget)
         self.shRBtn.setGeometry(QtCore.QRect(390, 510, 93, 28))
         self.shRBtn.setObjectName("shRBtn")
@@ -108,6 +108,8 @@ class Ui_MainWindow(QWidget):
             self.tableWidget.insertRow(row_number)
             for column_number, data in enumerate(row_data):
                 self.tableWidget.setItem(row_number, column_number, QtWidgets.QTableWidgetItem(str(data)))
+        self.tableWidget.setColumnCount(5)
+        self.tableWidget.setHorizontalHeaderLabels(['ID', 'Author', 'Title', 'Publisher', 'Year Published'])
         c.close()
 
     def add(self):
@@ -150,33 +152,43 @@ class Ui_MainWindow(QWidget):
         c = sqlite3.connect('books.db')
         conn = c.cursor()
         lrid = self.getText()
+        now = datetime.now()
+        date = now.strftime("%Y-%m-%d")
         conn.execute("SELECT LENT_TO FROM books WHERE ID=?", (lrid,))
         lendstatus = conn.fetchall()[0][0]
         if lendstatus == 'nobody':
-            c.execute("UPDATE books SET LENT_TO = ? WHERE ID =?", (loggingUser.login, lrid))
+            c.execute("UPDATE books SET LENT_TO = ?, LENT_WHEN = ? WHERE ID =?", (loggingUser.login, date, lrid))
             c.commit()
             self.loadData()
             QMessageBox.about(self, "SUCCESS", "The book was successfully lent")
         elif lendstatus == loggingUser.login:
-            c.execute("UPDATE books SET LENT_TO = 'nobody' WHERE ID = ?", (lrid,))
+            c.execute("UPDATE books SET LENT_TO = 'nobody', LENT_WHEN = NULL WHERE ID = ?", (lrid,))
             c.commit()
             self.loadData()
             QMessageBox.about(self, "SUCCESS", "The book was successfully returned")
-
         else:
             QMessageBox.about(self, "ERROR", "Operation unavailable")
     def showRentals(self):
         """ shows books that are not free to rent"""
         c = sqlite3.connect('books.db')
-        query = "SELECT ID,AUTHOR,TITLE,PUBLISHER,YEAR_PUBLISHED,LENT_TO FROM books WHERE LENT_TO is not 'nobody'"
+        query = "SELECT ID,AUTHOR,TITLE,PUBLISHER,YEAR_PUBLISHED,LENT_TO, LENT_WHEN FROM books " \
+                "WHERE LENT_TO is not 'nobody'"
         result = c.execute(query)
         self.tableWidget.setRowCount(0)
-        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setColumnCount(7)
         for row_number, row_data in enumerate(result):
             self.tableWidget.insertRow(row_number)
             for column_number, data in enumerate(row_data):
                 self.tableWidget.setItem(row_number, column_number, QtWidgets.QTableWidgetItem(str(data)))
+        self.tableWidget.setHorizontalHeaderLabels(['ID',
+                                                    'Author',
+                                                    'Title',
+                                                    'Publisher',
+                                                    'Year Published',
+                                                    'Lent to',
+                                                    'lent when?'])
         c.close()
+
 
 if __name__ == "__main__":
     import sys

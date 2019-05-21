@@ -37,6 +37,23 @@ except sqlite3.OperationalError:
     print("wyglada na to, ze cos sie zj*balo")
     exit()
 
+print("What do you want to do?")
+print("1. I WANT TO LOG IN!")
+print("2. I WANT TO CREATE AN ACCOUNT")
+choice = input("...")
+if choice == '2':
+    c = sqlite3.connect('books.db')
+    login = input("Login: ")
+    password = getpass()
+    c.execute("INSERT INTO users(username, password) VALUES(?,?)", (login, hash_password(password)))
+    c.commit()
+    print("User "+login+" was added successfully")
+    c.close()
+    exit()
+elif choice != '1':
+    print("Something went wrong")
+    exit()
+
 
 login = input("Login: ")
 password = getpass("Password: ")
@@ -51,4 +68,3 @@ if verify_password(pwdCheck, password) is False:
     print('invalid user credentials')
     exit()
 print('welcome ' + login)
-
