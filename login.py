@@ -2,11 +2,11 @@ import sqlite3
 import hashlib
 import binascii
 import os
-import getpass
+from getpass import getpass
 from User import User
 # user1 zaq1@WSX
 # user2 ZAQ!2wsx
-
+# in case of a hang, change getpass to input("Password: ")
 
 def hash_password(password):
     """Hash a password for storing."""
@@ -39,7 +39,7 @@ except sqlite3.OperationalError:
 
 
 login = input("Login: ")
-password = getpass.getpass("Password: ")
+password = getpass("Password: ")
 loggingUser = User(login, password)
 try:
     c.execute("SELECT password FROM users WHERE username=?", (login,))
