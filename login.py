@@ -2,6 +2,7 @@ import sqlite3
 import hashlib
 import binascii
 import os
+import getpass
 from User import User
 # user1 zaq1@WSX
 # user2 ZAQ!2wsx
@@ -38,7 +39,7 @@ except sqlite3.OperationalError:
 
 
 login = input("Login: ")
-password = input("Password: ")
+password = getpass.getpass("Password: ")
 loggingUser = User(login, password)
 try:
     c.execute("SELECT password FROM users WHERE username=?", (login,))

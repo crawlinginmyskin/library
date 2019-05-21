@@ -12,7 +12,7 @@ class Ui_MainWindow(QWidget):
 
     def loadData(self):
         c = sqlite3.connect('books.db')
-        query = "SELECT AUTHOR,TITLE,PUBLISHER,YEAR_PUBLISHED FROM books WHERE LENT_TO is 'nobody'"
+        query = "SELECT ID,AUTHOR,TITLE,PUBLISHER,YEAR_PUBLISHED FROM books WHERE LENT_TO is 'nobody'"
         result = c.execute(query)
         self.tableWidget.setRowCount(0)
         for row_number, row_data in enumerate(result):
@@ -26,6 +26,7 @@ class Ui_MainWindow(QWidget):
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
         self.addBtn = QtWidgets.QPushButton(self.centralwidget)
         self.addBtn.setGeometry(QtCore.QRect(10, 510, 93, 28))
         self.addBtn.setObjectName("addBtn")
@@ -47,15 +48,16 @@ class Ui_MainWindow(QWidget):
         self.lrBtn = QtWidgets.QPushButton(self.centralwidget)
         self.lrBtn.setGeometry(QtCore.QRect(640, 510, 93, 28))
         self.lrBtn.setObjectName("lrBtn")
+
+        self.lrBtn.clicked.connect(self.lr)
+
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         self.tableWidget.setGeometry(QtCore.QRect(0, 0, 801, 461))
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setRowCount(0)
         self.tableWidget.horizontalHeader().setVisible(False)
-
-
-
+        self.tableWidget.verticalHeader().setVisible(False)
         self.loadBtn = QtWidgets.QPushButton(self.centralwidget)
         self.loadBtn.setGeometry(QtCore.QRect(290, 470, 151, 111))
         self.loadBtn.setObjectName("loadBtn")
@@ -126,13 +128,33 @@ class Ui_MainWindow(QWidget):
         c.commit()
         c.close()
         self.loadData()
+    def lr(self):
+        c = sqlite3.connect('books.db')
+        conn = c.cursor()
+        lrid = self.getText()
+        conn.execute("SELECT LENT_TO FROM books WHERE ID=?", (lrid,))
+        lendstatus = conn.fetchall()[0][0]
+        if lendstatus == 'nobody':
+            c.execute("UPDATE books SET LENT_TO = ? WHERE ID =?", (loggingUser.login, lrid))
+            c.commit()
+            self.loadData()
+            QMessageBox.about(self, "SUCCESS", "The book was successfully lent")
+        elif lendstatus == loggingUser.login:
+            c.execute("UPDATE books SET LENT_TO = 'nobody' WHERE ID = ?", (lrid,))
+            c.commit()
+            self.loadData()
+            QMessageBox.about(self, "SUCCESS", "The book was successfully returned")
 
+        else:
+            QMessageBox.about(self, "ERROR", "Operation unavailable")
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+    ui.loadData()
     sys.exit(app.exec_())
